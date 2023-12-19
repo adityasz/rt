@@ -22,7 +22,7 @@
 using color = vec;
 
 /**
- * @brief Print colors to an output stream.
+ * @brief Print colors to an output stream (for use with PPM et al.).
  *
  * @param out The output stream (e.g., std::cout).
  * @param pixel_color The color.
@@ -35,16 +35,20 @@ void write_color(std::ostream &out, color pixel_color)
 }
 
 /**
- * @brief Print colors to an output file.
+ * @brief Print colors to an output file in bottom-up order (for BMP).
  *
  * @param out The output file.
  * @param pixel_color The color.
  */
 void write_color(std::ofstream &file, color pixel_color)
 {
-	file << static_cast<int>(255.999 * pixel_color.x()) << ' '
-	     << static_cast<int>(255.999 * pixel_color.y()) << ' '
-	     << static_cast<int>(255.999 * pixel_color.z()) << '\n';
+	auto blue  = static_cast<uint8_t>(255.999 * pixel_color.z());
+	auto green = static_cast<uint8_t>(255.999 * pixel_color.y());
+	auto red   = static_cast<uint8_t>(255.999 * pixel_color.x());
+
+	file.write(std::bit_cast<const char *>(&blue),  sizeof(blue));
+	file.write(std::bit_cast<const char *>(&green), sizeof(green));
+	file.write(std::bit_cast<const char *>(&red),   sizeof(red));
 }
 
 #endif
