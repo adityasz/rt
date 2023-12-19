@@ -11,8 +11,6 @@
 #include <cmath>
 #include <iostream>
 
-using std::sqrt;
-
 /**
  * @brief Represents a 3D vector in Euclidean space.
  *
@@ -129,7 +127,7 @@ public:
 	 */
 	double  length()           const
 	{
-		return sqrt(length_squared());
+		return std::sqrt(length_squared());
 	}
 
 	/**

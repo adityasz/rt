@@ -1,7 +1,12 @@
 #include <iostream>
-#include "vec.h"
+#include <fstream>
+
+#include "rtweekend.h"
+#include "bmp_header_writer.cpp"
 #include "color.h"
-#include "ray.h"
+#include "hittable.h"
+#include "hittable_list.h"
+#include "sphere.h"
 
 #define DEBUG_STATUS    1
 #define DEBUG_FULL      2
@@ -22,42 +27,31 @@
 #define DEBUG_MSG(x)	do {} while(0)
 #endif
 
-double hits_sphere(const point &center, double radius, const ray &r)
+color ray_color(const ray &r, const hittable &world)
 {
-	vec oc = r.origin() - center;
-
-	double a = dot(r.direction(), r.direction());
-	double b = dot(r.direction(), oc);
-	double c = dot(oc, oc) - radius*radius;
-	double discriminant = b*b - a*c;
-
-	if (discriminant < 0)
-		return -1.0;
-
-	return (-b - discriminant) / a;
-}
-
-color ray_color(const ray &r)
-{
-	double t = hits_sphere(point(0, 0, -1), 0.5, r);
-	if (t > 0.0) {
-		vec N = unit_vector(r.at(t) - vec(0, 0, -1));
-		return 0.5 * color(N.x() + 1, N.y() + 1, N.z() + 1);
-	}
+	hit_record rec;
+	if (world.hit(r, interval(0, infinity), rec))
+		return 0.5 * (rec.normal + color(1, 1, 1));
 
 	vec    dir = unit_vector(r.direction());
 	double a   = 0.5 * (dir.y() + 1.0);
+
 	return (1.0 - a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
 }
 
 int main()
 {
-	double aspect_ratio = 16.0 / 9.0;
-	int    img_width    = 1024;
+	double aspect_ratio = 4.0 / 3.0;
+	int    img_width    = 4000;
 
 	// Calculate image height
 	int img_height = static_cast<int>(img_width / aspect_ratio);
 	img_height = (img_height < 1) ? 1 : img_height;
+
+	// World
+	hittable_list world;
+	world.add(std::make_shared<sphere>(point(0, 0, -1), 0.5));
+	world.add(std::make_shared<sphere>(point(0, -100.5, -1), 100));
 
 	// Camera
 	double focal_length    = 1.0;
@@ -72,26 +66,33 @@ int main()
 	vec pixel_delta_u = viewport_u / img_width;
 	vec pixel_delta_v = viewport_v / img_height;
 
+	// This is an example of a really really long line, which is intentionally long, so that it crosses 100 columns!
+
 	// Upper left pixel
 	point viewport_upper_left = camera_center - vec(0, 0, focal_length)
 	                            - viewport_u / 2 - viewport_v / 2;
 	point pixel00_loc = viewport_upper_left
 	                    + 0.5 * (pixel_delta_u + pixel_delta_v);
 
-	std::ofstream out_file("image.ppm");
-	out_file << "P3\n" << img_width << ' ' << img_height << "\n255\n";
-
-	for (int i = 0; i < img_height; i++) {
-		STATUS_MSG("\rScanlines completed: " << i + 1 << "/"
+	std::ofstream out_file("image.bmp");
+	write_BMP_headers(out_file, img_width, img_height);
+	for (int i = img_height - 1; i >= 0; i--) {
+		STATUS_MSG("\rScanlines completed: " << img_height - i << '/'
 		        << img_height << std::flush);
 		for (int j = 0; j < img_width; j++) {
 			point pixel_center  = pixel00_loc + (j * pixel_delta_u)
-			                     + (i * pixel_delta_v);
-			vec ray_direction = pixel_center - camera_center;
-			ray r(camera_center, ray_direction);
+					       + (i * pixel_delta_v);
+			vec   ray_direction = pixel_center - camera_center;
+			ray   r(camera_center, ray_direction);
 
-			color pixel_color = ray_color(r);
+			color pixel_color = ray_color(r, world);
 			write_color(out_file, pixel_color);
+		}
+
+		const uint8_t padding = 0;
+		for (int p = 0; p < (4 - (3 * img_width) % 4) % 4; p++) {
+			out_file.write(std::bit_cast<const char *>(&padding),
+			               sizeof(padding));
 		}
 	}
 	std::clog << std::endl;
