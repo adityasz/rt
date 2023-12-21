@@ -16,8 +16,8 @@ class hittable_list : public hittable {
 public:
 	std::vector<std::shared_ptr<hittable>> objects;
 
-	hittable_list() {}
-	hittable_list(std::shared_ptr<hittable> object)
+	hittable_list() = default;
+	explicit hittable_list(const std::shared_ptr<hittable> &object)
 	{
 		add(object);
 	}
@@ -27,20 +27,20 @@ public:
 		objects.clear();
 	}
 
-	void add(std::shared_ptr<hittable> object)
+	void add(const std::shared_ptr<hittable> &object)
 	{
 		objects.push_back(object);
 	}
 
-	bool hit(const ray &r, interval t, hit_record &rec) const override
+	bool hit(const ray &r, interval I, hit_record &rec) const override
 	{
 		hit_record tmp;
 		bool       hit_anything   = false;
 
 		for (auto &object : objects) {
-			if (object->hit(r, t, tmp)) {
+			if (object->hit(r, I, tmp)) {
 				hit_anything = true;
-				t.max = tmp.t;
+				I.max = tmp.t;
 				rec = tmp;
 			}
 		}

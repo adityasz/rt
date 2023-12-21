@@ -21,7 +21,8 @@ public:
 	 * @param center A `point` object representing the center.
 	 * @param radius The radius.
 	 */
-	sphere(point center, double radius) : center(center), radius(radius) {}
+	sphere(point center, double radius, const std::shared_ptr<material> &mat)
+		: center(center), radius(radius), mat(mat) {}
 
 	/**
 	 * @brief Find whether a ray hits the sphere.
@@ -52,8 +53,9 @@ public:
 				return false;
 		}
 
-		rec.t = root;
-		rec.p = r.at(root);
+		rec.t   = root;
+		rec.p   = r.at(root);
+		rec.mat = mat;
 		vec outward_normal = (rec.p - center) / radius;
 		rec.set_face_normal(r, outward_normal);
 
@@ -63,6 +65,7 @@ public:
 private:
 	point  center;
 	double radius;
+	std::shared_ptr<material> mat;
 };
 
 

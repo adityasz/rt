@@ -11,6 +11,7 @@
 #include "vec.h"
 #include <iostream>
 #include <fstream>
+#include <cstdint>
 
 /**
  * @brief Represents colors in (R, G, B).
@@ -21,17 +22,11 @@
  */
 using color = vec;
 
-/**
- * @brief Print colors to an output stream (for use with PPM et al.).
- *
- * @param out The output stream (e.g., std::cout).
- * @param pixel_color The color.
- */
-void write_color(std::ostream &out, color pixel_color)
+inline color linear_to_gamma(color pixel_color)
 {
-	out << static_cast<int>(255.999 * pixel_color.x()) << ' '
-	    << static_cast<int>(255.999 * pixel_color.y()) << ' '
-	    << static_cast<int>(255.999 * pixel_color.z()) << '\n';
+	return {std::sqrt(pixel_color.x()),
+	        std::sqrt(pixel_color.y()),
+	        std::sqrt(pixel_color.z())};
 }
 
 /**
@@ -40,15 +35,45 @@ void write_color(std::ostream &out, color pixel_color)
  * @param out The output file.
  * @param pixel_color The color.
  */
-void write_color(std::ofstream &file, color pixel_color)
+void write_color(std::ofstream &file, color pixel_color, int samples_per_pixel)
 {
-	auto blue  = static_cast<uint8_t>(255.999 * pixel_color.z());
-	auto green = static_cast<uint8_t>(255.999 * pixel_color.y());
-	auto red   = static_cast<uint8_t>(255.999 * pixel_color.x());
+	double scale = 1.0 / samples_per_pixel;
+	pixel_color = linear_to_gamma(scale * pixel_color);
 
-	file.write(std::bit_cast<const char *>(&blue),  sizeof(blue));
-	file.write(std::bit_cast<const char *>(&green), sizeof(green));
-	file.write(std::bit_cast<const char *>(&red),   sizeof(red));
+	const interval intensity(0.000, 0.999);
+  	auto b = static_cast<uint8_t>(256 * intensity.clamp(pixel_color.z()));
+	auto g = static_cast<uint8_t>(256 * intensity.clamp(pixel_color.y()));
+	auto r = static_cast<uint8_t>(256 * intensity.clamp(pixel_color.x()));
+
+	file.write(std::bit_cast<const char *>(&b), sizeof(b));
+	file.write(std::bit_cast<const char *>(&g), sizeof(g));
+	file.write(std::bit_cast<const char *>(&r), sizeof(r));
+}
+
+/**
+ * @brief Print colors to an output file (PPM).
+ *
+ * @param out The output file.
+ * @param pixel_color The color.
+ */
+void write_color_ppm(std::ofstream &file, color pixel_color, int samples_per_pixel)
+{
+	double scale = 1.0 / samples_per_pixel;
+	pixel_color = linear_to_gamma(scale * pixel_color);
+
+	const interval intensity(0.000, 0.999);
+	auto r = static_cast<int>(256 * intensity.clamp(pixel_color.x()));
+	auto g = static_cast<int>(256 * intensity.clamp(pixel_color.y()));
+	auto b = static_cast<int>(256 * intensity.clamp(pixel_color.z()));
+
+	file << r << ' ' << g << ' ' << b << '\n';
+}
+
+inline color rgb(int r, int g, int b)
+{
+	return {static_cast<double>(r / 255.0),
+		static_cast<double>(g / 255.0),
+		static_cast<double>(b / 255.0)};
 }
 
 #endif

@@ -11,6 +11,23 @@
 #include <cmath>
 #include <iostream>
 
+double Q_rsqrt(double number)
+{
+	long i;
+	float x2, y;
+	const float threehalfs = 1.5F;
+
+	x2 = number * 0.5F;
+	y  = number;
+	i  = *(long *) &y;                       // evil floating point bit hack
+	i  = 0x5f3759df - (i >> 1);
+	y  = *(float *) &i;
+	y  = y * (threehalfs - (x2 * y * y));    // 1st iteration
+	// y = y * (threehalfs - (x2 * y * y)); // 2nd iteration, can be removed
+
+	return y;
+}
+
 /**
  * @brief Represents a 3D vector in Euclidean space.
  *
@@ -140,6 +157,12 @@ public:
 		return v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
 	}
 
+	bool    near_zero() const
+	{
+		double e = 1e-8;
+		return (fabs(v[0]) < e) && (fabs(v[1]) < e) && (fabs(v[2]) < e);
+	}
+
 	/**
 	 * @brief Dot product with another vector.
 	 *
@@ -162,6 +185,13 @@ public:
 		return {u.v[1] * v[2] - u.v[2] * v[1],
 		        u.v[2] * v[0] - u.v[0] * v[2],
 		        u.v[0] * v[1] - u.v[1] * v[0]};
+	}
+
+	static vec random(double min = 0.0, double max = 1.0)
+	{
+		return {random_double(min, max),
+		        random_double(min, max),
+		        random_double(min, max)};
 	}
 };
 
@@ -302,7 +332,60 @@ inline vec cross(const vec &u, const vec &v)
  */
 inline vec unit_vector(vec v)
 {
-	return v / v.length();
+	return v * Q_rsqrt(v.length());
+}
+
+/**
+ * @return Get random vector in unit sphere.
+ */
+inline vec random_in_unit_sphere()
+{
+	while (true) {
+		vec v = vec::random(-1, 1);
+		if (v.length_squared() < 1)
+			return v;
+	}
+}
+
+/**
+ * @brief Get a random unit vector.
+ *
+ * The reason we are normalising a random vector in a unit sphere instead of,
+ * say, normalising an arbitrary random vector in a unit cube is because there
+ * is a larger probability for a random vector to point along the corners of the
+ * unit cube, and hence the random unit vector isn't uniformly random.
+ *
+ * @return A random unit vector.
+ */
+inline vec random_unit_vector()
+{
+	return unit_vector(random_in_unit_sphere());
+}
+
+/**
+ * @brief Get a random unit vector on a hemisphere.
+ * @param normal The normal at a point on the sphere.
+ * @return A vector pointing away from the sphere from that point.
+ */
+inline vec random_on_hemisphere(const vec &normal)
+{
+	vec v = random_unit_vector();
+	if (dot(v, normal) > 0)
+		return v;
+	return -v;
+}
+
+inline vec reflect(const vec &v, const vec &n)
+{
+	return v - 2 * dot(v, n) * n;
+}
+
+inline vec refract(const vec &v, const vec &n, double n1_over_n2)
+{
+	double cos_theta = fmin(dot(-v, n), 1.0);
+	vec    r_perp    = n1_over_n2 * (v + cos_theta*n);
+	vec    r_prll    = -std::sqrt(fabs(1.0 - r_perp.length_squared())) * n;
+	return r_perp + r_prll;
 }
 
 #endif

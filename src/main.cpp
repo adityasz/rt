@@ -1,40 +1,43 @@
 #include <iostream>
-#include <fstream>
 
-#include "rtweekend.h"
+#include "rt.h"
 
 #include "camera.h"
 #include "hittable_list.h"
 #include "sphere.h"
 
-color ray_color(const ray &r, const hittable &world)
-{
-	hit_record rec;
-	if (world.hit(r, interval(0, infinity), rec))
-		return 0.5 * (rec.normal + color(1, 1, 1));
-
-	vec    dir = unit_vector(r.direction());
-	double a   = 0.5 * (dir.y() + 1.0);
-
-	return (1.0 - a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
-}
-
 int main()
 {
-	double aspect_ratio   = 4.0 / 3.0;
-	int    img_width      = 4000;
-	double viewport_width = 2.0;
-	double focal_length   = 1.0;
+	double aspect_ratio   = 16.0 / 9.0;
+	int    img_width      = 2560;
+	double viewport_width = 3.0;          // 0.002
+	double focal_length   = 1.0;          // 0.001
+	int    num_samples    = 40;
 	point  camera_center(0, 0, 0);
 
 	camera cam(img_width, aspect_ratio, viewport_width,
-		   focal_length, camera_center);
+	           focal_length, camera_center, num_samples);
 
-	// World
 	hittable_list world;
-	world.add(std::make_shared<sphere>(point(0, 0, -1), 0.5));
-	world.add(std::make_shared<sphere>(point(0, -100.5, -1), 100));
 
-	std::ofstream out_file("image.bmp");
-	cam.render(world, out_file);
+	auto mat_ground = std::make_shared<lambertian>(rgb(90, 55, 36));
+	auto mat_center = std::make_shared<lambertian>(rgb(226, 140, 141));
+	// auto mat_left   = std::make_shared<metal>(color(0.8, 0.8, 0.8), 0.01);
+	auto mat_left   = std::make_shared<dielectric>(1.5);
+	auto mat_right  = std::make_shared<metal>(rgb(28, 91, 155), 0.01);
+
+	world.add(std::make_shared<sphere>(point( 0.0, -100.25, -1.0), 100.00, mat_ground));
+	world.add(std::make_shared<sphere>(point(-0.5,    0.00, -1.0),   0.25, mat_left));
+	world.add(std::make_shared<sphere>(point( 0.0,    0.00, -1.0),   0.25, mat_center));
+	world.add(std::make_shared<sphere>(point( 0.5,    0.00, -1.0),   0.25, mat_right));
+
+#ifdef DEBUG
+	auto start    = std::chrono::steady_clock::now();
+	cam.render_multi_threaded(world, "image.bmp");
+	auto end      = std::chrono::steady_clock::now();
+	auto duration = std::chrono::duration<double>(end - start);
+	DEBUG_MSG("Render time: " << duration.count() << " s\n");
+#else
+	cam.render_multi_threaded(world, "image.bmp");
+#endif
 }

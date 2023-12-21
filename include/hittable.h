@@ -11,13 +11,16 @@
 #include "vec.h"
 #include "ray.h"
 
+class material;
+
 /// @brief This class represents hits.
 class hit_record {
 public:
-	point  p;
-	vec    normal;
-	double t;
-	bool   front_face;
+	point                     p;
+	vec                       normal;
+	std::shared_ptr<material> mat;
+	double                    t;
+	bool                      front_face;
 
 	/**
 	 * @brief Sets the hit record normal vector.

@@ -15,7 +15,11 @@ set(BINARY_DIR bin)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/${BINARY_DIR})
 
+find_package(Threads REQUIRED)
+
 add_executable(rt ${SOURCE_DIR}/main.cpp)
+
+target_link_libraries(rt Threads::Threads)
 
 target_include_directories(rt
 		                   PUBLIC ${INCLUDE_DIR}/
@@ -25,8 +29,8 @@ target_sources(rt
                PRIVATE ${SOURCE_DIR}/main.cpp)
 
 add_compile_options(
-		"-O3" "-Wall" "-Wpedantic" "-Wextra" "-fexceptions"
-		"$<$<CONFIG:DEBUG>:-O0;-g3;-ggdb3>"
+		"-O3" "-Wall" "-Wpedantic" "-Wextra" "-fexceptions" "-march=native"
+		"$<$<CONFIG:DEBUG>:-O3;-g3;-ggdb3>"
 )
 
 set(DEBUG 0
