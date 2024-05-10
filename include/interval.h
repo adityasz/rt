@@ -1,9 +1,4 @@
-/**
- * @file      interval.h
- * @author    Aditya Singh
- * @copyright Copyright (C) 2023 Aditya Singh
- * @date      December 2023
- */
+// Copyright (C) 2023 Aditya Singh
 
 #ifndef INTERVAL_H
 #define INTERVAL_H
@@ -41,7 +36,7 @@ public:
 	static const interval universe;
 };
 
-const static interval empty(+infinity, -infinity);
-const static interval universe(+infinity, -infinity);
+static const interval empty(+infinity, -infinity);
+static const interval universe(+infinity, -infinity);
 
-#endif //INTERVAL_H
+#endif // INTERVAL_H

@@ -1,9 +1,4 @@
-/**
- * @file 	ray.h
- * @author 	Aditya Singh
- * @copyright	Copyright (C) 2023 Aditya Singh
- * @date 	December 2023
- */
+// Copyright (C) 2023 Aditya Singh
 
 #ifndef RAY_H
 #define RAY_H
@@ -16,7 +11,7 @@
 class ray {
 public:
 	/// @brief Default constructor, initializes origin and direction to 0.
-	ray() : orig(0, 0, 0), dir(0, 0, 0) {}
+	ray(): orig(0, 0, 0), dir(0, 0, 0) {}
 
 	/**
 	 * @brief Constructor that takes point of origin and direction.
@@ -25,21 +20,21 @@ public:
 	 * @param direction The direction of the ray.
 	 */
 	ray(const point &origin, const vec &direction)
-		: orig(origin), dir(direction) {}
+	    : orig(origin), dir(direction) {}
 
 	/**
 	 * @brief Get the point of origin of the ray.
 	 *
 	 * @return The point of origin.
 	 */
-	point origin()                const { return orig; }
+	point origin() const { return orig; }
 
 	/**
 	 * @brief Get the direction of the ray.
 	 *
 	 * @return A `vec` object along the ray.
 	 */
-	vec   direction()             const { return dir; }
+	vec direction() const { return dir; }
 
 	/**
 	 * @brief Get coordinates of point at a distance from origin.
@@ -47,10 +42,11 @@ public:
 	 * @param t The distance from point of origin.
 	 * @return A `point` object with the coordinates.
 	 */
-	point at(double t)            const { return orig + t * dir; }
+	point at(double t) const { return orig + t * dir; }
+
 private:
 	point orig;
 	vec   dir;
 };
 
-#endif
+#endif // RAY_H

@@ -1,35 +1,7 @@
-/**
- * @file	rt.h
- * @author	Aditya Singh
- * @copyright	Copyright (C) 2023 Aditya Singh
- * @date	December 2023
- */
+// Copyright (C) 2023 Aditya Singh
 
 #ifndef RT_H
 #define RT_H
-
-#define DEBUG_STATUS    1
-#define DEBUG_FULL      2
-
-#if DEBUG >= DEBUG_STATUS
-#define STATUS_MSG(x)                                       \
-        do {                                                \
-                std::clog << x;                             \
-        } while (0)
-#define DEBUG_MSG(x)                                        \
-        do {                                                \
-                if constexpr (DEBUG >= DEBUG_FULL) {        \
-                        std::cerr << x;                     \
-                }                                           \
-        } while (0)
-#else
-// #define STATUS_MSG(x)	do {} while(0)
-#define STATUS_MSG(x)                                       \
-        do {                                                \
-                std::clog << x;                             \
-        } while (0)
-#define DEBUG_MSG(x)	do {} while(0)
-#endif
 
 #include <cmath>
 #include <limits>
@@ -54,5 +26,7 @@ inline double random_double(double min = 0.0, double max = 1.0)
 #include "interval.h"
 #include "ray.h"
 #include "vec.h"
+#include "log_levels.h"
+#include "print.h"
 
-#endif //RT_H
+#endif // RT_H

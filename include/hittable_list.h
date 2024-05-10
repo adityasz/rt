@@ -1,14 +1,11 @@
-/**
- * @file	hittable_list.h
- * @author	Aditya Singh
- * @copyright	Copyright (C) 2023 Aditya Singh
- * @date	December 2023
- */
+// Copyright (C) 2023 Aditya Singh
 
 #ifndef HITTABLE_LIST_H
 #define HITTABLE_LIST_H
 
+#include "rt.h"
 #include "hittable.h"
+
 #include <memory>
 #include <vector>
 
@@ -17,6 +14,7 @@ public:
 	std::vector<std::shared_ptr<hittable>> objects;
 
 	hittable_list() = default;
+
 	explicit hittable_list(const std::shared_ptr<hittable> &object)
 	{
 		add(object);
@@ -27,15 +25,16 @@ public:
 		objects.clear();
 	}
 
-	void add(const std::shared_ptr<hittable> &object)
+	template<typename... Args>
+	void add(Args &&...args)
 	{
-		objects.push_back(object);
+		(objects.push_back(std::forward<Args>(args)), ...);
 	}
 
 	bool hit(const ray &r, interval I, hit_record &rec) const override
 	{
 		hit_record tmp;
-		bool       hit_anything   = false;
+		bool       hit_anything = false;
 
 		for (auto &object : objects) {
 			if (object->hit(r, I, tmp)) {
@@ -50,4 +49,4 @@ public:
 };
 
 
-#endif //HITTABLE_LIST_H
+#endif // HITTABLE_LIST_H

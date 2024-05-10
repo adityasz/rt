@@ -1,9 +1,4 @@
-/**
- * @file	hittable.h
- * @author	Aditya Singh
- * @copyright	Copyright (C) 2023 Aditya Singh
- * @date	December 2023
- */
+// Copyright (C) 2023 Aditya Singh
 
 #ifndef HITTABLE_H
 #define HITTABLE_H
@@ -35,7 +30,7 @@ public:
 	}
 };
 
-/// @brief This class is represents anything that a ray might hit.
+/// @brief This class represents anything that a ray might hit.
 class hittable {
 public:
 	virtual ~hittable() = default;
@@ -44,4 +39,4 @@ public:
 };
 
 
-#endif //HITTABLE_H
+#endif // HITTABLE_H

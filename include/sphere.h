@@ -1,9 +1,4 @@
-/**
- * @file	sphere.h
- * @author	Aditya Singh
- * @copyright	Copyright (C) 2023 Aditya Singh
- * @date	December 2023
- */
+// Copyright (C) 2023 Aditya Singh
 
 #ifndef SPHERE_H
 #define SPHERE_H
@@ -21,15 +16,14 @@ public:
 	 * @param center A `point` object representing the center.
 	 * @param radius The radius.
 	 */
-	sphere(point center, double radius, const std::shared_ptr<material> &mat)
+	sphere(point center, double radius,const std::shared_ptr<material> &mat)
 		: center(center), radius(radius), mat(mat) {}
 
 	/**
 	 * @brief Find whether a ray hits the sphere.
 	 *
 	 * @param r The ray.
-	 * @param t_min The minimum value of `t` for a hit to be counted.
-	 * @param t_max The maximum  value of `t` for a hit to be counted.
+	 * @param t The interval (t_min, t_max) in which the hit is counted.
 	 * @param rec The hit record.
 	 * @return True if the ray hits the sphere, false otherwise.
 	 */
@@ -69,4 +63,4 @@ private:
 };
 
 
-#endif //SPHERE_H
+#endif // SPHERE_H

@@ -1,14 +1,10 @@
-/**
- * @file 	color.h
- * @author 	Aditya Singh
- * @copyright	Copyright (C) 2023 Aditya Singh
- * @date 	December 2023
- */
+// Copyright (C) 2023 Aditya Singh
 
 #ifndef COLOR_H
 #define COLOR_H
 
 #include "vec.h"
+
 #include <iostream>
 #include <fstream>
 #include <cstdint>
@@ -35,10 +31,9 @@ inline color linear_to_gamma(color pixel_color)
  * @param out The output file.
  * @param pixel_color The color.
  */
-void write_color(std::ofstream &file, color pixel_color, int samples_per_pixel)
+void write_color(std::ofstream &file, color pixel_color)
 {
-	double scale = 1.0 / samples_per_pixel;
-	pixel_color = linear_to_gamma(scale * pixel_color);
+	pixel_color = linear_to_gamma(pixel_color);
 
 	const interval intensity(0.000, 0.999);
   	auto b = static_cast<uint8_t>(256 * intensity.clamp(pixel_color.z()));
@@ -76,4 +71,4 @@ inline color rgb(int r, int g, int b)
 		static_cast<double>(b / 255.0)};
 }
 
-#endif
+#endif // COLOR_H

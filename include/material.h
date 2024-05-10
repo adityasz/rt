@@ -1,9 +1,4 @@
-/**
- * @file      material.h
- * @author    Aditya Singh
- * @copyright Copyright (C) 2023 Aditya Singh
- * @date      December 2023
- */
+// Copyright (C) 2023 Aditya Singh
 
 #ifndef MATERIAL_H
 #define MATERIAL_H
@@ -19,7 +14,7 @@ public:
 	virtual ~material() = default;
 
 	virtual bool scatter(const ray &r, const hit_record &rec,
-			     color &attenuation, ray &scattered) const = 0;
+	                     color &attenuation, ray &scattered) const = 0;
 };
 
 class lambertian : public material {
@@ -27,7 +22,7 @@ public:
 	lambertian(const color &a) : albedo(a) {}
 
 	bool scatter(const ray &r, const hit_record &rec,
-		     color &attenuation, ray &scattered) const override
+	             color &attenuation, ray &scattered) const override
 	{
 		vec scatter_direction = rec.normal + random_unit_vector();
 		if (scatter_direction.near_zero())
@@ -59,7 +54,7 @@ private:
 	double fuzz;
 };
 
-// FIXME: Refractions not good
+// TODO: Refractions not good
 class dielectric : public material {
 public:
 	dielectric(double n) : n_rel(n) {}
@@ -94,4 +89,4 @@ private:
 	}
 };
 
-#endif //MATERIAL_H
+#endif // MATERIAL_H

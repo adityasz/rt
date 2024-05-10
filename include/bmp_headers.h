@@ -1,11 +1,7 @@
-/**
- * @file	bmp_header_writer.cpp
- * @author	Aditya Singh
- * @copyright	Copyright (C) 2023 Aditya Singh
- * @date	December 2023
- *
- * @brief	File for writing BMP headers.
- */
+// Copyright (C) 2023 Aditya Singh
+
+#ifndef BMP_HEADERS_H
+#define BMP_HEADERS_H
 
 #include <fstream>
 #include <cstdint>
@@ -52,3 +48,5 @@ void write_BMP_headers(std::ofstream &image, int width, int height) {
 	image.write(std::bit_cast<const char *>(&DIB_header),
 	            sizeof(DIB_header));
 }
+
+#endif // BMP_HEADERS_H

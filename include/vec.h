@@ -1,9 +1,4 @@
-/**
- * @file 	vec.h
- * @author 	Aditya Singh
- * @copyright	Copyright (C) 2023 Aditya Singh
- * @date 	December 2023
- */
+// Copyright (C) 2023 Aditya Singh
 
 #ifndef VEC_H
 #define VEC_H
@@ -11,16 +6,21 @@
 #include <cmath>
 #include <iostream>
 
+/**
+ * @brief Get the reciprocal square root of a number.
+ *
+ * From Quake III Arena source code.
+ */
 double Q_rsqrt(double number)
 {
 	long i;
-	float x2, y;
-	const float threehalfs = 1.5F;
+	double x2, y;
+	const float threehalfs = 1.5f;
 
-	x2 = number * 0.5F;
+	x2 = number * 0.5f;
 	y  = number;
 	i  = *(long *) &y;                       // evil floating point bit hack
-	i  = 0x5f3759df - (i >> 1);
+	i  = 0x5f3759df - (i >> 1);              // what the ****?
 	y  = *(float *) &i;
 	y  = y * (threehalfs - (x2 * y * y));    // 1st iteration
 	// y = y * (threehalfs - (x2 * y * y)); // 2nd iteration, can be removed
@@ -39,7 +39,7 @@ double Q_rsqrt(double number)
  */
 class vec {
 public:
-	/// @brief The array of components of the vector.
+	/// @brief The pixels of components of the vector.
 	double v[3];
 
 	/// @brief Default constructor, initializes all components to 0.
@@ -59,28 +59,28 @@ public:
 	 *
 	 * @return The x-component of the vector.
 	 */
-	double  x()                const { return v[0]; }
+	double x() const { return v[0]; }
 
 	/**
 	 * @brief Get the y-component.
 	 *
 	 * @return The y-component of the vector.
 	 */
-	double  y()                const { return v[1]; }
+	double y() const { return v[1]; }
 
 	/**
 	 * @brief Get the z-component.
 	 *
 	 * @return The z-component of the vector.
 	 */
-	double  z()                const { return v[2]; }
+	double z() const { return v[2]; }
 
 	/**
 	 * @brief Unary minus operator.
 	 *
 	 * @return A new vector with all components negated.
 	 */
-	vec     operator-()        const { return {-v[0], -v[1], -v[2]}; }
+	vec operator-() const { return { -v[0], -v[1], -v[2] }; }
 
 	/**
 	 * @brief Get the i-th component.
@@ -88,7 +88,7 @@ public:
 	 * @param i The index (0 for x, 1 for y, 2 for z).
 	 * @return The corresponding component.
 	 */
-	double  operator[](int i)  const { return v[i]; }
+	double operator[](int i) const { return v[i]; }
 
 	/**
 	 * @brief Get a reference to the i-th component.
@@ -96,7 +96,7 @@ public:
 	 * @param i The index (0 for x, 1 for y, 2 for z).
 	 * @return A reference to the corresponding component.
 	 */
-	double& operator[](int i)        { return v[i]; }
+	double &operator[](int i)        { return v[i]; }
 
 	/**
 	 * @brief In-place addition with another vector.
@@ -104,7 +104,7 @@ public:
 	 * @param u The vector to add.
 	 * @return A reference to the modified vector.
 	 */
-	vec&    operator+=(const vec &u)
+	vec &operator+=(const vec &u)
 	{
 		v[0] += u.v[0];
 		v[1] += u.v[1];
@@ -118,7 +118,7 @@ public:
 	 * @param t The scalar to multiply with.
 	 * @return A reference to the modified vector.
 	 */
-	vec&    operator*=(double t)
+	vec &operator*=(double t)
 	{
 		v[0] *= t;
 		v[1] *= t;
@@ -132,7 +132,7 @@ public:
 	 * @param t The scalar to divide by.
 	 * @return A reference to the modified vector.
 	 */
-	vec&    operator/=(double t)
+	vec &operator/=(double t)
 	{
 		return *this *= 1/t;
 	}
@@ -142,7 +142,7 @@ public:
 	 *
 	 * @return The square root of the sum of squared components.
 	 */
-	double  length()           const
+	double length() const
 	{
 		return std::sqrt(length_squared());
 	}
@@ -152,12 +152,12 @@ public:
 	 *
 	 * @return The sum of squared components.
 	 */
-	double  length_squared()   const
+	double length_squared() const
 	{
 		return v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
 	}
 
-	bool    near_zero() const
+	bool near_zero() const
 	{
 		double e = 1e-8;
 		return (fabs(v[0]) < e) && (fabs(v[1]) < e) && (fabs(v[2]) < e);
@@ -169,7 +169,7 @@ public:
 	 * @param u The other vector.
 	 * @return The sum of component-wise products.
 	 */
-	double  dot(const vec &u)
+	double dot(const vec &u)
 	{
 		return v[0]*u[0] + v[1]*u[1] + v[2]*u[2];
 	}
@@ -180,7 +180,7 @@ public:
 	 * @param u The other vector.
 	 * @return The cross product of this vector with u.
 	 */
-	vec     cross(const vec &u)
+	vec cross(const vec &u)
 	{
 		return {u.v[1] * v[2] - u.v[2] * v[1],
 		        u.v[2] * v[0] - u.v[0] * v[2],
@@ -213,7 +213,7 @@ using point = vec;
  *
  * @return The output stream with the printed `vec` components.
  */
-inline std::ostream& operator<<(std::ostream &out, const vec &v)
+inline std::ostream &operator<<(std::ostream &out, const vec &v)
 {
 	return out << v.v[0] << ' ' << v.v[1] << ' ' << v.v[2];
 }
@@ -388,4 +388,4 @@ inline vec refract(const vec &v, const vec &n, double n1_over_n2)
 	return r_perp + r_prll;
 }
 
-#endif
+#endif // VEC_H

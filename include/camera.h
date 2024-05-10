@@ -1,62 +1,141 @@
-/**
- * @file      camera.h
- * @author    Aditya Singh
- * @copyright Copyright (C) 2023 Aditya Singh
- * @date      December 2023
- */
+// Copyright (C) 2023 Aditya Singh
 
 #ifndef CAMERA_H
 #define CAMERA_H
-
-#include <thread>
-#include <vector>
-#include <mutex>
 
 #include "rt.h"
 
 #include "color.h"
 #include "hittable.h"
 #include "material.h"
-#include "bmp_header_writer.cpp"
+#include "bmp_headers.h"
 
+#include <thread>
+#include <vector>
+#include <mutex>
+#include <sys/ioctl.h>
+#include <unistd.h>
+#include <algorithm>
+#include <execution>
+
+/// @brief Represents an image.
 class image {
 public:
+	/// @brief Construct an image with given height and width.
 	image(int h, int w) : height(h), width(w)
 	{
-		array   = new color[height * width]{{0, 0, 0}};
-		mutexes = new std::mutex[height * width];
+		pixels = new color[height * width]{{0, 0, 0}};
 	}
 
-	~image() { delete[] array; }
+	/// @brief Destroy the image and free the memory.
+	~image() { delete[] pixels; }
 
+	/// @brief Get the color at the given pixel.
 	inline color &operator[](int i, int j) const
 	{
-		return array[width * i + j];
+		return pixels[width * i + j];
 	}
 
-	std::mutex& lock(int i, int j) const
+	/// @brief Divide colors at all pixels by a scalar.
+	inline image &operator/(double scale)
 	{
-		return mutexes[width * i + j];
+		std::transform(std::execution::par, pixels,
+		               pixels + height * width, pixels,
+		               [scale](color c) { return c / scale; });
+		return *this;
 	}
 
-	color *array;
-	std::mutex *mutexes;
+	/// @brief Array of colors representing pixels.
+	color *pixels;
+
+	/// @brief Height of the image.
 	int height;
+
+	/// @brief Width of the image.
 	int width;
 };
 
+/**
+ * @brief Save an image to a file.
+ *
+ * @param img The image to save.
+ * @param filename The name of the file to save to.
+ */
+void saveimage(const image &img, const char *filename)
+{
+	std::ofstream file(filename);
+	write_BMP_headers(file, img.width, img.height);
+	for (int i = img.height - 1; i >= 0; i--) {
+		for (int j = 0; j < img.width; j++)
+			write_color(file, img[i, j]);
+	}
+	file.close();
+}
+
+/// @brief Get the number of columns in the terminal.
+int tput_cols()
+{
+	struct winsize w{};
+	ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+	return w.ws_col;
+}
+
+/// @brief Show rendering progress.
+void show_progress(const std::vector<std::atomic<float>> &progs)
+{
+	unsigned num_threads = progs.size();
+	bool done;
+	while (true) {
+		done = true;
+		std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<long long>(100)));
+		unsigned cols = tput_cols() - 10;
+		if (cols < 15)
+			return;
+		for (unsigned t_id = 0; t_id < num_threads; t_id++) {
+			float p = progs[t_id].load();
+			unsigned num_equals = static_cast<unsigned>(p * cols);
+			if (p < 1)
+				done = false;
+			printrt("[{}" ESC CSI BACKSPACE ">{}] {:0<6.2f}%\n",
+			        std::string(num_equals, '='),
+			        std::string(cols - num_equals, ' '), p * 100);
+		}
+		if (done)
+			return;
+		printrt(ESC CSI "{}" PREV_LINE, progs.size());
+	}
+}
+
+/// @brief Represents a camera.
 class camera {
 public:
-	camera(int i_width, double aspect_ratio, double v_width,
-	       double f, point center, int num = 1, int max_d = 10)
-		: img_width(i_width), viewport_width(v_width), max_depth(max_d),
-		  focal_length(f), center(center), num_samples(num)
+	/**
+	 * @brief Construct a camera with the given parameters.
+	 *
+	 * @param image_width Width of the image in pixels.
+	 * @param aspect_ratio Aspect ratio of the image.
+	 * @param viewport_width Width of the viewport.
+	 * @param f Focal length.
+	 * @param center Location of the camera.
+	 * @param num_samples Number of samples per pixel.
+	 * @param depth Maximum number of bounces.
+	 */
+	camera(int image_width,
+	       double aspect_ratio,
+	       double viewport_width,
+	       double f,
+	       point center,
+	       int num_samples = 1,
+	       int depth = 10)
+	    : img_width(image_width), viewport_width(viewport_width),
+	      max_depth(depth), focal_length(f), center(center),
+	      num_samples(num_samples)
 	{
 		img_height = static_cast<int>(img_width / aspect_ratio);
 		img_height = (img_height < 1) ? 1 : img_height;
 
-		viewport_height = viewport_width *
-		                  static_cast<double>(img_height) / img_width;
+		viewport_height = viewport_width
+		                  * static_cast<double>(img_height) / img_width;
 
 		viewport_u    = vec(viewport_width, 0, 0);
 		viewport_v    = vec(0, -viewport_height, 0);
@@ -69,13 +148,26 @@ public:
 		              + 0.5 * (pixel_delta_u + pixel_delta_v);
 	}
 
-	void render(const hittable &world, const char *filename);
-	void render_multi_threaded(const hittable &world, const char *filename);
-	// FIXME: SIGABRTed when joining threads
-	void render_multi_threaded2(const hittable &world, const char *filename);
+	/**
+	 * @brief Render the scene to a file.
+	 *
+	 * @param world The hittable list representing the scene.
+	 * @param filename The name of the file to save to.
+	 */
+	void render_st(const hittable &world, const char *filename);
+
+	/**
+	 * @brief Render the scene to a file using multiple threads.
+	 *
+	 * @param world The hittable list representing the scene.
+	 * @param filename The name of the file to save to.
+	 * @param num_threads The number of threads to use, defaults to
+	 *                    `std::thread::hardware_concurrency() - 2`.
+	 */
+	void render(const hittable &world, const char *filename,
+	            unsigned num_threads = std::thread::hardware_concurrency() - 2);
 
 private:
-
 	int    num_samples = 1;
 	int    img_width;
 	int    img_height;
@@ -91,117 +183,53 @@ private:
 	point  pixel00_loc;
 	int    max_depth;
 
+	/// @brief Get the ray for the given pixel.
 	ray   get_ray(int i, int j);
+
+	/// @brief Get the color for the given ray.
 	color ray_color(const ray &r, int depth, const hittable &world);
 };
 
-void camera::render_multi_threaded(const hittable &world, const char *filename)
+void camera::render(const hittable &world, const char *filename,
+                    unsigned num_threads)
 {
-	const int num_threads = 20;
-	const int segment_height = img_height / num_threads;
 	std::vector<std::thread> threads;
+	threads.reserve(num_threads);
+	std::vector<std::atomic<float>> progs(num_threads);
 	image img = {img_height, img_width};
 
-	STATUS_MSG("Render started on " << num_threads << " threads\n");
-	STATUS_MSG("Image size: " << img_width << " x " << img_height << '\n');
-	STATUS_MSG(num_samples << " samples\n");
+	pr_info("Render started on {} threads\n", num_threads);
+	pr_info("Image size: {} x {}\n", img_width, img_height);
+	pr_info("{} samples\n", num_samples);
 
-	auto raytrace_segment = [this, &world, &img](int start_row,
-	                                             int end_row,
-	                                             int id) {
-		for (int i = start_row; i < end_row; i++) {
+	auto rt_rows = [this, &world, &img, &progs](int start, int end, int id) {
+		for (int i = start; i < end; i++) {
 			for (int j = 0; j < img_width; j++) {
 				for (int idx = 0; idx < num_samples; idx++) {
 					ray r = get_ray(i, j);
 					img[i, j] += ray_color(r, max_depth, world);
 				}
 			}
+			progs[id] = static_cast<float>(i - start + 1)
+			            / static_cast<float>(end - start);
 		}
 	};
 
-	for (int thread_id = 0; thread_id < num_threads; thread_id++) {
-		int start_row = thread_id * segment_height;
-		int end_row   = (thread_id == num_threads - 1)
-		                ? img_height
-		                : start_row + segment_height;
-		threads.emplace_back(raytrace_segment, start_row,
-		                     end_row, thread_id);
+	const unsigned rows_per_thread = img_height / num_threads;
+	for (unsigned t_id = 0; t_id < num_threads; t_id++) {
+		unsigned start_row = t_id * rows_per_thread;
+		unsigned end_row   = (t_id == num_threads - 1)
+		                             ? img_height
+		                             : start_row + rows_per_thread;
+		threads.emplace_back(rt_rows, start_row, end_row, t_id);
 	}
+
+	show_progress(progs);
 
 	for (std::thread &thread : threads)
 		thread.join();
 
-	std::ofstream file(filename);
-	write_BMP_headers(file, img_width, img_height);
-	for (int i = img_height - 1; i >= 0; i--) {
-		for (int j = 0; j < img_width; j++)
-			write_color(file, img[i, j], num_samples);
-	}
-	file.close();
-}
-
-// FIXME: Bad renders; something is broken (probably locks: read up on threads)
-void camera::render_multi_threaded2(const hittable &world, const char *filename)
-{
-	const int num_threads = 20;
-	const int samples_per_thread = num_samples / num_threads;
-
-	std::vector<std::thread> threads;
-	image img = {img_height, img_width};
-
-	STATUS_MSG("Render started on " << num_threads << " threads\n");
-	STATUS_MSG("Image size: " << img_width << " x " << img_height << '\n');
-	STATUS_MSG(num_samples << " samples\n");
-
-	auto raytrace = [&]() {
-		for (int i = 0; i < img_height; i++) {
-			for (int j = 0; j < img_width; j++) {
-				for (int idx = 0; idx < samples_per_thread; idx++) {
-					ray r = get_ray(i, j);
-					// std::lock_guard<std::mutex> guard(img.lock(i, j));
-					img[i, j] += ray_color(r, max_depth, world);
-				}
-			}
-		}
-	};
-	for (int thread_id = 0; thread_id < num_threads; thread_id++)
-		threads.emplace_back(raytrace);
-	for (std::thread &thread : threads)
-		thread.join();
-
-	std::ofstream file(filename);
-	write_BMP_headers(file, img_width, img_height);
-	for (int i = img_height - 1; i >= 0; i--) {
-		for (int j = 0; j < img_width; j++)
-			write_color(file, img[i, j], num_samples);
-	}
-	file.close();
-}
-
-void camera::render(const hittable &world, const char *filename)
-{
-	std::ofstream file(filename);
-	write_BMP_headers(file, img_width, img_height);
-	for (int i = img_height - 1; i >= 0; i--) {
-		STATUS_MSG("\rScanlines completed: " << img_height - i
-		        << '/' << img_height << std::flush);
-		for (int j = 0; j < img_width; j++) {
-			color pixel_color(0, 0, 0);
-			for (int idx = 0; idx < num_samples; idx++) {
-				ray r = get_ray(i, j);
-				pixel_color += ray_color(r, max_depth, world);
-			}
-			write_color(file, pixel_color, num_samples);
-		}
-
-		const uint8_t padding = 0;
-		for (int p = 0; p < (4 - (3 * img_width) % 4) % 4; p++) {
-			file.write(std::bit_cast<const char *>(&padding),
-			           sizeof(padding));
-		}
-	}
-	file.close();
-	STATUS_MSG("\rDone                                      " << std::endl);
+	saveimage(img / num_samples, filename);
 }
 
 color camera::ray_color(const ray &r, int depth, const hittable &world)
@@ -214,8 +242,8 @@ color camera::ray_color(const ray &r, int depth, const hittable &world)
 		ray scattered;
 		color attenuation;
 		if (rec.mat->scatter(r, rec, attenuation, scattered))
-			return attenuation * ray_color(scattered, depth - 1,
-						       world);
+			return attenuation
+			       * ray_color(scattered, depth - 1, world);
 		return {0, 0, 0};
 	}
 
@@ -226,13 +254,39 @@ color camera::ray_color(const ray &r, int depth, const hittable &world)
 
 ray camera::get_ray(int i, int j)
 {
-	point pixel_sample = pixel00_loc + (i * pixel_delta_v)
-	                     + (j * pixel_delta_u);
-	double px = -0.5 + random_double();
-	double py = -0.5 + random_double();
+	point pixel_sample =
+	        pixel00_loc + (i * pixel_delta_v) + (j * pixel_delta_u);
+	double px     = -0.5 + random_double();
+	double py     = -0.5 + random_double();
 	pixel_sample += px * pixel_delta_v + py * pixel_delta_u;
 
 	return {center, pixel_sample - center};
 }
 
-#endif //CAMERA_H
+void camera::render_st(const hittable &world, const char *filename)
+{
+	std::ofstream file(filename);
+	write_BMP_headers(file, img_width, img_height);
+	for (int i = img_height - 1; i >= 0; i--) {
+		std::clog << "\rScanlines completed: " << img_height - i
+		          << '/' << img_height << std::flush;
+		for (int j = 0; j < img_width; j++) {
+			color pixel_color(0, 0, 0);
+			for (int idx = 0; idx < num_samples; idx++) {
+				ray r = get_ray(i, j);
+				pixel_color += ray_color(r, max_depth, world);
+			}
+			write_color(file, pixel_color / num_samples);
+		}
+
+		const uint8_t padding = 0;
+		for (int p = 0; p < (4 - (3 * img_width) % 4) % 4; p++) {
+			file.write(std::bit_cast<const char *>(&padding),
+			           sizeof(padding));
+		}
+	}
+	file.close();
+	std::clog << "\rDone                                      " << std::endl;
+}
+
+#endif // CAMERA_H
