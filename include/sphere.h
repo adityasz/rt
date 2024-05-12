@@ -16,7 +16,7 @@ public:
 	 * @param center A `point` object representing the center.
 	 * @param radius The radius.
 	 */
-	sphere(point center, double radius,const std::shared_ptr<material> &mat)
+	sphere(point center, double radius, const std::shared_ptr<material> &mat)
 		: center(center), radius(radius), mat(mat) {}
 
 	/**
@@ -29,20 +29,20 @@ public:
 	 */
 	bool hit(const ray &r, interval t, hit_record &rec) const override
 	{
-		vec oc = r.origin() - center;
+		vec oc = center - r.origin();
 
 		double a = dot(r.direction(), r.direction());
-		double b = dot(r.direction(), oc);
-		double c = dot(oc, oc) - radius*radius;
-		double discriminant = b*b - a*c;
+		double h = dot(r.direction(), oc);
+		double c = dot(oc, oc) - radius * radius;
 
+		double discriminant = h * h - a * c;
 		if (discriminant < 0)
 			return false;
 
 		double sqrt_disc = std::sqrt(discriminant);
-		double root = (-b - sqrt_disc) / a;
+		double root = (h - sqrt_disc) / a;
 		if (!t.surrounds(root)) {
-			root = (-b + sqrt_disc) / a;
+			root = (h + sqrt_disc) / a;
 			if (!t.surrounds(root))
 				return false;
 		}

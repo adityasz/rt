@@ -93,12 +93,18 @@ void show_progress(const std::vector<std::atomic<float>> &progs)
 			return;
 		for (unsigned t_id = 0; t_id < num_threads; t_id++) {
 			float p = progs[t_id].load();
-			unsigned num_equals = static_cast<unsigned>(p * cols);
-			if (p < 1)
+			auto num_equals = static_cast<unsigned>(p * cols);
+			if (p < 1) {
 				done = false;
-			printrt("[{}" ESC CSI BACKSPACE ">{}] {:0<6.2f}%\n",
-			        std::string(num_equals, '='),
-			        std::string(cols - num_equals, ' '), p * 100);
+				printrt("[{}" ESC CSI BACKSPACE ">{}] {:0<6.2f}%\n",
+				        std::string(num_equals, '='),
+				        std::string(cols - num_equals, ' '),
+				        p * 100);
+			} else {
+				printrt("[{}] {:0<6.2f}%\n",
+				        std::string(cols, '='),
+				        p * 100);
+			}
 		}
 		if (done)
 			return;
@@ -125,7 +131,7 @@ public:
 	       double viewport_width,
 	       double f,
 	       point center,
-	       int num_samples = 1,
+	       int num_samples = 10,
 	       int depth = 10)
 	    : img_width(image_width), viewport_width(viewport_width),
 	      max_depth(depth), focal_length(f), center(center),
@@ -150,14 +156,6 @@ public:
 
 	/**
 	 * @brief Render the scene to a file.
-	 *
-	 * @param world The hittable list representing the scene.
-	 * @param filename The name of the file to save to.
-	 */
-	void render_st(const hittable &world, const char *filename);
-
-	/**
-	 * @brief Render the scene to a file using multiple threads.
 	 *
 	 * @param world The hittable list representing the scene.
 	 * @param filename The name of the file to save to.
@@ -239,7 +237,7 @@ color camera::ray_color(const ray &r, int depth, const hittable &world)
 		return {0, 0, 0};
 	// 0.001 and not 0 to solve the shadow acne problem
 	if (world.hit(r, interval(0.001, infinity), rec)) {
-		ray scattered;
+		ray   scattered;
 		color attenuation;
 		if (rec.mat->scatter(r, rec, attenuation, scattered))
 			return attenuation
@@ -261,32 +259,6 @@ ray camera::get_ray(int i, int j)
 	pixel_sample += px * pixel_delta_v + py * pixel_delta_u;
 
 	return {center, pixel_sample - center};
-}
-
-void camera::render_st(const hittable &world, const char *filename)
-{
-	std::ofstream file(filename);
-	write_BMP_headers(file, img_width, img_height);
-	for (int i = img_height - 1; i >= 0; i--) {
-		std::clog << "\rScanlines completed: " << img_height - i
-		          << '/' << img_height << std::flush;
-		for (int j = 0; j < img_width; j++) {
-			color pixel_color(0, 0, 0);
-			for (int idx = 0; idx < num_samples; idx++) {
-				ray r = get_ray(i, j);
-				pixel_color += ray_color(r, max_depth, world);
-			}
-			write_color(file, pixel_color / num_samples);
-		}
-
-		const uint8_t padding = 0;
-		for (int p = 0; p < (4 - (3 * img_width) % 4) % 4; p++) {
-			file.write(std::bit_cast<const char *>(&padding),
-			           sizeof(padding));
-		}
-	}
-	file.close();
-	std::clog << "\rDone                                      " << std::endl;
 }
 
 #endif // CAMERA_H

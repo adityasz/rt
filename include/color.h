@@ -51,10 +51,9 @@ void write_color(std::ofstream &file, color pixel_color)
  * @param out The output file.
  * @param pixel_color The color.
  */
-void write_color_ppm(std::ofstream &file, color pixel_color, int samples_per_pixel)
+void write_color_ppm(std::ofstream &file, color pixel_color)
 {
-	double scale = 1.0 / samples_per_pixel;
-	pixel_color = linear_to_gamma(scale * pixel_color);
+	pixel_color = linear_to_gamma(pixel_color);
 
 	const interval intensity(0.000, 0.999);
 	auto r = static_cast<int>(256 * intensity.clamp(pixel_color.x()));

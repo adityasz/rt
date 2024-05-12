@@ -15,9 +15,10 @@ public:
 
 	hittable_list() = default;
 
-	explicit hittable_list(const std::shared_ptr<hittable> &object)
+	template<typename... Args>
+	explicit hittable_list(Args &&...args)
 	{
-		add(object);
+		add(std::forward<Args>(args)...);
 	}
 
 	void clear()

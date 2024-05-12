@@ -7,28 +7,6 @@
 #include <iostream>
 
 /**
- * @brief Get the reciprocal square root of a number.
- *
- * From Quake III Arena source code.
- */
-double Q_rsqrt(double number)
-{
-	long i;
-	double x2, y;
-	const float threehalfs = 1.5f;
-
-	x2 = number * 0.5f;
-	y  = number;
-	i  = *(long *) &y;                       // evil floating point bit hack
-	i  = 0x5f3759df - (i >> 1);              // what the ****?
-	y  = *(float *) &i;
-	y  = y * (threehalfs - (x2 * y * y));    // 1st iteration
-	// y = y * (threehalfs - (x2 * y * y)); // 2nd iteration, can be removed
-
-	return y;
-}
-
-/**
  * @brief Represents a 3D vector in Euclidean space.
  *
  * The `vec` class stores three double-precision floating-point values
@@ -80,7 +58,7 @@ public:
 	 *
 	 * @return A new vector with all components negated.
 	 */
-	vec operator-() const { return { -v[0], -v[1], -v[2] }; }
+	vec operator-() const { return {-v[0], -v[1], -v[2]}; }
 
 	/**
 	 * @brief Get the i-th component.
@@ -96,7 +74,7 @@ public:
 	 * @param i The index (0 for x, 1 for y, 2 for z).
 	 * @return A reference to the corresponding component.
 	 */
-	double &operator[](int i)        { return v[i]; }
+	double &operator[](int i) { return v[i]; }
 
 	/**
 	 * @brief In-place addition with another vector.
@@ -292,7 +270,7 @@ inline vec operator*(const vec &v, double t)
  */
 inline vec operator/(vec v, double t)
 {
-	return (1/t) * v;
+	return (1 / t) * v;
 }
 
 /**
@@ -332,7 +310,7 @@ inline vec cross(const vec &u, const vec &v)
  */
 inline vec unit_vector(vec v)
 {
-	return v * Q_rsqrt(v.length());
+	return v / v.length();
 }
 
 /**

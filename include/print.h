@@ -27,8 +27,10 @@ namespace fmtlib = fmt;
  * @param fmt format string
  * @param ... format arguments
  */
-#define pr_error(fmt, ...)                                  \
+#define pr_error(fmt, ...)                                    \
         fmtlib::print(stderr, fmt, ##__VA_ARGS__)
+#define printrt(fmt, ...)                                     \
+	fmtlib::print(fmt, ##__VA_ARGS__)
 #endif
 
 #if LOGLEVEL >= LOGLEVEL_DEBUG
@@ -40,8 +42,6 @@ namespace fmtlib = fmt;
  * @param fmt format string
  * @param ... format arguments
  */
-#define printrt(fmt, ...)                                     \
-	fmtlib::print(fmt, ##__VA_ARGS__)
 
 /**
  * @brief Print an info-level message.

@@ -13,13 +13,26 @@ class material {
 public:
 	virtual ~material() = default;
 
+	/**
+	 * @brief Scatter a ray.
+	 *
+	 * @param r The incident ray.
+	 * @param rec The hit record.
+	 * @param attenuation The attenuation.
+	 * @param scattered Will be set to the scattered ray.
+	 */
 	virtual bool scatter(const ray &r, const hit_record &rec,
 	                     color &attenuation, ray &scattered) const = 0;
 };
 
 class lambertian : public material {
 public:
-	lambertian(const color &a) : albedo(a) {}
+	/**
+	 * @brief Constructor that takes albedo.
+	 *
+	 * @param albedo The albedo (fraction of light reflected).
+	 */
+	lambertian(const color &albedo) : albedo(albedo) {}
 
 	bool scatter(const ray &r, const hit_record &rec,
 	             color &attenuation, ray &scattered) const override
@@ -38,15 +51,23 @@ private:
 
 class metal : public material {
 public:
-	metal(const color &a, double f) : albedo(a), fuzz(f < 1 ? f : 1) {}
+	/**
+	 * @brief Constructor that takes albedo and fuzziness.
+	 *
+	 * @param albedo The albedo (fraction of light reflected).
+	 * @param fuzz The fuzziness.
+	 */
+	metal(const color &albedo, double fuzz)
+	    : albedo(albedo), fuzz(fuzz < 1 ? fuzz : 1) {}
 
 	bool scatter(const ray &r, const hit_record &rec,
 		     color &attenuation, ray &scattered) const override
 	{
-		vec reflected = reflect(unit_vector(r.direction()), rec.normal);
-		scattered = ray(rec.p, reflected + fuzz*random_unit_vector());
+		vec reflected = reflect(r.direction(), rec.normal);
+		reflected = unit_vector(reflected) + fuzz * random_unit_vector();
+		scattered = ray(rec.p, reflected);
 		attenuation = albedo;
-		return true;
+		return dot(scattered.direction(), rec.normal) > 0;
 	}
 
 private:
@@ -54,9 +75,13 @@ private:
 	double fuzz;
 };
 
-// TODO: Refractions not good
 class dielectric : public material {
 public:
+	/**
+	 * @brief Constructor that takes the relative refractive index.
+	 *
+	 * @param n The relative refractive index.
+	 */
 	dielectric(double n) : n_rel(n) {}
 
 	bool scatter(const ray &r, const hit_record &rec,
@@ -65,22 +90,31 @@ public:
 		attenuation = {1.0, 1.0, 1.0};
 		double n1_over_n2 = rec.front_face ? 1.0 / n_rel : n_rel;
 
-		vec    v         = unit_vector(r.direction());
-		double cos_theta = fmin(dot(-v, rec.normal), 1.0);
-		double sin_theta = std::sqrt(1.0 - cos_theta*cos_theta);
+		vec    unit_dir  = unit_vector(r.direction());
+		double cos_theta = fmin(dot(-unit_dir, rec.normal), 1.0);
+		double sin_theta = std::sqrt(1.0 - cos_theta * cos_theta);
 		bool   tir       = n1_over_n2 * sin_theta > 1.0;
 
+		vec dir;
 		if (tir || reflectance(cos_theta, n1_over_n2) > random_double())
-			v = reflect(v, rec.normal);
+			dir = reflect(unit_dir, rec.normal);
 		else
-			v = refract(v, rec.normal, n1_over_n2);
+			dir = refract(unit_dir, rec.normal, n1_over_n2);
 
-		scattered = ray(rec.p, v);
+		scattered = ray(rec.p, dir);
 		return true;
 	}
 
 private:
 	double n_rel;
+	/**
+	 * @brief Schlick's approximation for reflectance.
+	 *
+	 * @param cosine The cosine of the angle between the incident ray
+	 *               and the normal.
+	 * @param n_rel The relative refractive index.
+	 * @return The reflectance.
+	 */
 	static double reflectance(double cosine, double n_rel)
 	{
 		double r0 = (1 - n_rel) / (1 + n_rel);
