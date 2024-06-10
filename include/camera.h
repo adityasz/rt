@@ -120,35 +120,43 @@ public:
 	 *
 	 * @param image_width Width of the image in pixels.
 	 * @param aspect_ratio Aspect ratio of the image.
-	 * @param viewport_width Width of the viewport.
-	 * @param f Focal length.
-	 * @param center Location of the camera.
+	 * @param vfov Field of view.
+	 * @param lookfrom Location of the camera.
+	 * @param lookat Point the camera is looking at.
+	 * @param vup Camera's up vector.
 	 * @param num_samples Number of samples per pixel.
 	 * @param depth Maximum number of bounces.
 	 */
-	camera(int image_width,
+	camera(int    image_width,
 	       double aspect_ratio,
-	       double viewport_width,
-	       double f,
-	       point center,
-	       int num_samples = 10,
-	       int depth = 10)
-	    : img_width(image_width), viewport_width(viewport_width),
-	      max_depth(depth), focal_length(f), center(center),
+	       double vfov,
+	       point  lookfrom,
+	       point  lookat,
+	       vec    vup,
+	       int    num_samples = 10,
+	       int    depth = 10)
+	    : img_width(image_width), fov(vfov), max_depth(depth),
 	      num_samples(num_samples)
 	{
 		img_height = static_cast<int>(img_width / aspect_ratio);
 		img_height = (img_height < 1) ? 1 : img_height;
 
-		viewport_height = viewport_width
-		                  * static_cast<double>(img_height) / img_width;
+		center = lookfrom;
+		f = (lookat - lookfrom).length();
 
-		viewport_u    = vec(viewport_width, 0, 0);
-		viewport_v    = vec(0, -viewport_height, 0);
+		v_width = 2 * f * std::tan(degrees_to_radians(fov) / 2);
+		v_height = v_width * static_cast<double>(img_height) / img_width;
+
+		w = unit_vector(lookat - lookfrom);
+		u = unit_vector(cross(w, vup));
+		v = cross(u, w);
+
+		viewport_u    = v_width * u;
+		viewport_v    = v_height * -v;
 		pixel_delta_u = viewport_u / img_width;
 		pixel_delta_v = viewport_v / img_height;
 
-		viewport_upper_left = center + vec(0, 0, -focal_length)
+		viewport_upper_left = center + f * w
 		                      - viewport_u / 2 - viewport_v / 2;
 		pixel00_loc = viewport_upper_left
 		              + 0.5 * (pixel_delta_u + pixel_delta_v);
@@ -164,19 +172,25 @@ public:
 	 */
 	void render(const hittable &world, const char *filename,
 	            unsigned num_threads = std::thread::hardware_concurrency() - 2);
+	void render2(const hittable &world, const char *filename,
+	             unsigned num_threads = std::thread::hardware_concurrency() - 2);
 
 private:
 	int    num_samples = 1;
 	int    img_width;
 	int    img_height;
-	double focal_length;
-	double viewport_height;
-	double viewport_width;
+	double f;
+	double fov;
+	double v_height;
+	double v_width;
 	point  center;
 	vec    viewport_u;
 	vec    viewport_v;
 	vec    pixel_delta_u;
 	vec    pixel_delta_v;
+	vec    u;
+	vec    v;
+	vec    w;
 	point  viewport_upper_left;
 	point  pixel00_loc;
 	int    max_depth;
@@ -228,6 +242,12 @@ void camera::render(const hittable &world, const char *filename,
 		thread.join();
 
 	saveimage(img / num_samples, filename);
+}
+
+void camera::render2(const hittable &world, const char *filename,
+                     unsigned num_threads)
+{
+	image img = {img_height, img_width};
 }
 
 color camera::ray_color(const ray &r, int depth, const hittable &world)
