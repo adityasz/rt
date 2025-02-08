@@ -1,11 +1,14 @@
-// Copyright (C) 2023 Aditya Singh
-
 #ifndef HITTABLE_H
 #define HITTABLE_H
 
 #include "vec.h"
 #include "ray.h"
+#include "interval.h"
 
+#include <memory>
+
+namespace rt
+{
 class material;
 
 /// @brief This class represents hits.
@@ -37,6 +40,7 @@ public:
 
 	virtual bool hit(const ray &r, interval t, hit_record &rec) const = 0;
 };
+}
 
 
 #endif // HITTABLE_H

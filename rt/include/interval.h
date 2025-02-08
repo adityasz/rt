@@ -1,9 +1,9 @@
-// Copyright (C) 2023 Aditya Singh
-
 #ifndef INTERVAL_H
 #define INTERVAL_H
 
-#include "rt.h"
+namespace rt
+{
+constexpr double infinity = std::numeric_limits<double>::infinity();
 
 class interval {
 public:
@@ -13,16 +13,19 @@ public:
 	interval() : min(+infinity), max(-infinity) {}
 	interval(double min, double max) : min(min), max(max) {}
 
+	[[nodiscard]]
 	bool contains(double x) const
 	{
 		return min <= x && x <= max;
 	}
 
+	[[nodiscard]]
 	bool surrounds(double x) const
 	{
 		return min < x && x < max;
 	}
 
+	[[nodiscard]]
 	double clamp(double x) const
 	{
 		if (x < min)
@@ -38,5 +41,6 @@ public:
 
 static const interval empty(+infinity, -infinity);
 static const interval universe(+infinity, -infinity);
+}
 
 #endif // INTERVAL_H

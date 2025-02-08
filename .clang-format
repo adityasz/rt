@@ -1,4 +1,4 @@
-AccessModifierOffset: -8
+AccessModifierOffset: -4
 AlignAfterOpenBracket: Align
 AlignArrayOfStructures: Right
 AlignConsecutiveAssignments:
@@ -64,8 +64,8 @@ BreakAfterAttributes: Always
 BreakBeforeTernaryOperators: true
 BreakConstructorInitializers: BeforeColon
 BreakStringLiterals: true
-ColumnLimit: 80
-ContinuationIndentWidth: 8
+ColumnLimit: 90
+ContinuationIndentWidth: 4
 Cpp11BracedListStyle: false
 DerivePointerAlignment: false
 DisableFormat: false
@@ -77,22 +77,25 @@ IndentCaseBlocks: true
 IndentCaseLabels: false
 IndentGotoLabels: false
 IndentPPDirectives: None
-IndentWidth: 8
+IndentWidth: 4
 IndentWrappedFunctionNames: false
 InsertBraces: false
 InsertNewlineAtEOF: true
 KeepEmptyLinesAtEOF: false
 IntegerLiteralSeparator:
-  Binary: 0
+  Binary: 4
+  BinaryMinDigits: 6
   Decimal: 3
-  Hex: -1
+  DecimalMinDigits: 5
+  Hex: 2
+  HexMinDigits: 5
 KeepEmptyLinesAtTheStartOfBlocks: false
 LambdaBodyIndentation: Signature
 LineEnding: LF
 MaxEmptyLinesToKeep: 2
 NamespaceIndentation: None
 ObjCBinPackProtocolList: Auto
-ObjCBlockIndentWidth: 8
+ObjCBlockIndentWidth: 4
 ObjCSpaceAfterProperty: true
 ObjCSpaceBeforeProtocolList: true
 PackConstructorInitializers: BinPack
@@ -131,5 +134,5 @@ SpacesInCStyleCastParentheses: false
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
 Standard: c++20
-TabWidth: 8
+TabWidth: 4
 UseTab: ForIndentation

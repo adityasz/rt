@@ -1,25 +1,10 @@
-// Copyright (C) 2023 Aditya Singh
+#include "bmp_headers.h"
 
-#ifndef BMP_HEADERS_H
-#define BMP_HEADERS_H
-
-#include <fstream>
-#include <cstdint>
-
-/**
- * @brief Writes the headers of a BMP file.
- *
- * This function writes the headers of a BMP file to an output stream.
- * The headers include both the file header and the DIB header.
- *
- * @param image The output stream to write the headers to.
- * @param width The width of the image in pixels.
- * @param height The height of the image in pixels.
- */
-void write_BMP_headers(std::ofstream &image, int width, int height) {
+void rt::write_BMP_headers(std::ofstream &image, int width, int height)
+{
 	struct Header {
 		Header(uint32_t width, uint32_t height)
-			: file_size(54 + 3 * width * height) {}
+		    : file_size(54 + 3 * width * height) {}
 
 		const uint16_t file_type = 0x4D42;
 		const uint32_t file_size;
@@ -31,7 +16,7 @@ void write_BMP_headers(std::ofstream &image, int width, int height) {
 
 	struct DIB_Header {
 		DIB_Header(uint32_t width, uint32_t height)
-			: img_width(width), img_height(height) {}
+		    : img_width(width), img_height(height) {}
 
 		const uint32_t header_size        = 40;
 		const uint32_t img_width;
@@ -48,5 +33,3 @@ void write_BMP_headers(std::ofstream &image, int width, int height) {
 	image.write(std::bit_cast<const char *>(&DIB_header),
 	            sizeof(DIB_header));
 }
-
-#endif // BMP_HEADERS_H

@@ -1,15 +1,14 @@
-// Copyright (C) 2023 Aditya Singh
-
 #ifndef HITTABLE_LIST_H
 #define HITTABLE_LIST_H
 
-#include "rt.h"
 #include "hittable.h"
 
 #include <memory>
 #include <vector>
 
-class hittable_list : public hittable {
+namespace rt
+{
+class hittable_list final : public hittable {
 public:
 	std::vector<std::shared_ptr<hittable>> objects;
 
@@ -48,6 +47,7 @@ public:
 		return hit_anything;
 	}
 };
+}
 
 
 #endif // HITTABLE_LIST_H

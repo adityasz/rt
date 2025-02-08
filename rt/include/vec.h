@@ -1,10 +1,18 @@
-// Copyright (C) 2023 Aditya Singh
-
 #ifndef VEC_H
 #define VEC_H
 
 #include <cmath>
 #include <iostream>
+#include <random>
+
+namespace rt
+{
+inline double random_double(double min = 0.0, double max = 1.0)
+{
+	std::uniform_real_distribution distribution(min, max);
+	thread_local std::mt19937 generator(std::random_device{}());
+	return distribution(generator);
+}
 
 /**
  * @brief Represents a 3D vector in Euclidean space.
@@ -37,13 +45,15 @@ public:
 	 *
 	 * @return The x-component of the vector.
 	 */
-	double x() const { return v[0]; }
+	[[nodiscard]]
+       double x() const { return v[0]; }
 
 	/**
 	 * @brief Get the y-component.
 	 *
 	 * @return The y-component of the vector.
 	 */
+	[[nodiscard]]
 	double y() const { return v[1]; }
 
 	/**
@@ -51,6 +61,7 @@ public:
 	 *
 	 * @return The z-component of the vector.
 	 */
+	[[nodiscard]]
 	double z() const { return v[2]; }
 
 	/**
@@ -120,7 +131,8 @@ public:
 	 *
 	 * @return The square root of the sum of squared components.
 	 */
-	double length() const
+	[[nodiscard]]
+       double length() const
 	{
 		return std::sqrt(length_squared());
 	}
@@ -130,11 +142,13 @@ public:
 	 *
 	 * @return The sum of squared components.
 	 */
+	[[nodiscard]]
 	double length_squared() const
 	{
 		return v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
 	}
 
+	[[nodiscard]]
 	bool near_zero() const
 	{
 		double e = 1e-8;
@@ -147,7 +161,7 @@ public:
 	 * @param u The other vector.
 	 * @return The sum of component-wise products.
 	 */
-	double dot(const vec &u)
+	[[nodiscard]] double dot(const vec &u) const
 	{
 		return v[0]*u[0] + v[1]*u[1] + v[2]*u[2];
 	}
@@ -158,7 +172,7 @@ public:
 	 * @param u The other vector.
 	 * @return The cross product of this vector with u.
 	 */
-	vec cross(const vec &u)
+	[[nodiscard]] vec cross(const vec &u) const
 	{
 		return {u.v[1] * v[2] - u.v[2] * v[1],
 		        u.v[2] * v[0] - u.v[0] * v[2],
@@ -319,8 +333,7 @@ inline vec unit_vector(vec v)
 inline vec random_in_unit_sphere()
 {
 	while (true) {
-		vec v = vec::random(-1, 1);
-		if (v.length_squared() < 1)
+		if (vec v = vec::random(-1, 1); v.length_squared() < 1)
 			return v;
 	}
 }
@@ -364,6 +377,7 @@ inline vec refract(const vec &v, const vec &n, double n1_over_n2)
 	vec    r_perp    = n1_over_n2 * (v + cos_theta*n);
 	vec    r_prll    = -std::sqrt(fabs(1.0 - r_perp.length_squared())) * n;
 	return r_perp + r_prll;
+}
 }
 
 #endif // VEC_H
